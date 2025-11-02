@@ -11,8 +11,9 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
     TZ=Etc/UTC
 
-# System dependencies for science stack, camera, GPIO, and I2C access.
-RUN find /etc/apt/sources.list.d -name '*kitware*' -delete || true \
+# System dependencies for science stack, camera, GPIO, and I2C access; remove stale Kitware repo first.
+RUN sed -i '/apt\.kitware\.com/d' /etc/apt/sources.list \
+ && (find /etc/apt/sources.list.d -name '*kitware*' -delete || true) \
  && apt-get update \
  && apt-get install -y --no-install-recommends \
     python3-pip \
@@ -51,4 +52,4 @@ USER ${USERNAME}
 EXPOSE 8888
 
 # Default command starts Jupyter Lab bound to all interfaces.
-CMD ["jupyter", "lab", "--ip=0.0.0.0", "--no-browser", "--allow-root", "--LabApp.token=", "--LabApp.password="]
+CMD ["jupyter", "lab", "--ip=0.0.0.0", "--no-browser", "--LabApp.token=", "--LabApp.password=", "--allow-root"]
