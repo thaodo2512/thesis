@@ -42,12 +42,12 @@ RUN groupadd -f gpio \
  && (udevadm control --reload-rules || true) \
  && (udevadm trigger || true)
 
-# Create workspace user for better host-volume ownership.
+# Create workspace user for better host-volume ownership; reuse existing IDs if present.
 ARG USERNAME=jetbot
 ARG USER_UID=1000
 ARG USER_GID=1000
-RUN groupadd --gid ${USER_GID} ${USERNAME} \
- && useradd --uid ${USER_UID} --gid ${USER_GID} -m ${USERNAME} \
+RUN if ! getent group ${USER_GID} >/dev/null; then groupadd --gid ${USER_GID} ${USERNAME}; fi \
+ && if ! id -u ${USERNAME} >/dev/null 2>&1; then useradd --uid ${USER_UID} --gid ${USER_GID} -m ${USERNAME}; else usermod --gid ${USER_GID} ${USERNAME}; fi \
  && usermod -aG video,i2c,gpio ${USERNAME}
 
 WORKDIR /workspace
