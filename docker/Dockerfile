@@ -27,16 +27,22 @@ RUN sed -i '/apt\.kitware\.com/d' /etc/apt/sources.list \
     i2c-tools \
     libjpeg-dev \
     zlib1g-dev \
-    python3-jetson-gpio \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/*
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Python dependencies.
 COPY requirements.txt /tmp/requirements.txt
 RUN python3 -m pip install --upgrade pip setuptools wheel \
  && python3 -m pip install -r /tmp/requirements.txt \
- && python3 -m pip install jetson-utils \
+ && python3 -m pip install jetson-utils Jetson.GPIO \
  && rm /tmp/requirements.txt
+
+# Ensure GPIO udev rules exist so the non-root user can access pins.
+RUN groupadd -f gpio \
+ && RULE_PATH=$(python3 -c 'import Jetson.GPIO, os; print(os.path.join(os.path.dirname(Jetson.GPIO.__file__), "99-gpio.rules"))') \
+ && cp "${RULE_PATH}" /etc/udev/rules.d/99-gpio.rules \
+ && (udevadm control --reload-rules || true) \
+ && (udevadm trigger || true)
 
 # Create workspace user for better host-volume ownership.
 ARG USERNAME=jetbot
