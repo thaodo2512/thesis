@@ -6,7 +6,6 @@ LABEL maintainer="JetBot Thesis Maintainers" \
       description="JetBot dev container for Jetson Nano with PyTorch, OpenCV, and Jupyter."
 
 ENV DEBIAN_FRONTEND=noninteractive \
-    PIP_NO_CACHE_DIR=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     TZ=Etc/UTC
@@ -32,9 +31,9 @@ RUN sed -i '/apt\.kitware\.com/d' /etc/apt/sources.list \
 
 # Python dependencies.
 COPY requirements.txt /tmp/requirements.txt
-RUN python3 -m pip install --upgrade pip setuptools wheel \
- && python3 -m pip install -r /tmp/requirements.txt \
- && python3 -m pip install jetson-utils Jetson.GPIO \
+RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel \
+ && python3 -m pip install --no-cache-dir -r /tmp/requirements.txt \
+ && python3 -m pip install --no-cache-dir jetson-utils Jetson.GPIO \
  && rm /tmp/requirements.txt
 
 # Ensure GPIO udev rules exist so the non-root user can access pins.
