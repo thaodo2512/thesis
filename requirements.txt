@@ -1,0 +1,10 @@
+jupyterlab>=4.0
+ipykernel
+ipywidgets
+matplotlib
+numpy
+pandas
+scipy
+gymnasium
+pyyaml
+tqdm
