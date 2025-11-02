@@ -38,8 +38,7 @@ RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel \
 
 # Ensure GPIO udev rules exist so the non-root user can access pins.
 RUN groupadd -f gpio \
- && RULE_PATH=$(python3 -c 'import Jetson.GPIO, os; print(os.path.join(os.path.dirname(Jetson.GPIO.__file__), "99-gpio.rules"))') \
- && cp "${RULE_PATH}" /etc/udev/rules.d/99-gpio.rules \
+ && cp /usr/local/lib/python3.6/dist-packages/Jetson/GPIO/99-gpio.rules /etc/udev/rules.d/99-gpio.rules \
  && (udevadm control --reload-rules || true) \
  && (udevadm trigger || true)
 
