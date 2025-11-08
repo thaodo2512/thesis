@@ -16,6 +16,7 @@ services:
     container_name: jetbot-dev
     ports:
       - "8888:8888"
+      - "8080:8080" # camera_stream.py
     environment:
       TZ: "Etc/UTC"
       JUPYTER_ENABLE_LAB: "yes"
