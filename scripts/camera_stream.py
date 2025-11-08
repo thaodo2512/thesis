@@ -21,15 +21,14 @@ Environment variables (optional)
 - STREAM_PORT: overrides --port (default 8080)
 """
 
-from __future__ import annotations
-
 import argparse
 import os
 import sys
 import threading
 import time
 from http import server
-from typing import Optional
+from typing import Optional, List
+import socketserver
 
 import cv2
 
@@ -184,7 +183,7 @@ def make_http_handler(grabber: FrameGrabber):
     return Handler
 
 
-def parse_args(argv: list[str]) -> argparse.Namespace:
+def parse_args(argv):
     parser = argparse.ArgumentParser(description="Live MJPEG camera streamer")
     parser.add_argument("--device", default=os.getenv("VIDEO_DEVICE", "/dev/video0"))
     parser.add_argument("--width", type=int, default=1280)
@@ -197,7 +196,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv: list[str]) -> int:
+def main(argv):
     args = parse_args(argv)
     cap = build_capture(args)
     # Use target_fps slightly lower than source to avoid backlog
@@ -206,7 +205,15 @@ def main(argv: list[str]) -> int:
 
     addr = ("0.0.0.0", args.port)
     handler = make_http_handler(grabber)
-    httpd = server.ThreadingHTTPServer(addr, handler)
+    # Python <3.7 fallback for ThreadingHTTPServer
+    try:
+        HTTPServer = server.ThreadingHTTPServer  # type: ignore[attr-defined]
+    except AttributeError:
+        class ThreadingHTTPServer(socketserver.ThreadingMixIn, server.HTTPServer):
+            daemon_threads = True
+
+        HTTPServer = ThreadingHTTPServer
+    httpd = HTTPServer(addr, handler)
     print(
         f"[camera-stream] Serving MJPEG on http://{addr[0]}:{addr[1]} (index/, stream.mjpg, snapshot.jpg)",
         f"device={os.getenv('VIDEO_DEVICE', args.device)} gst={args.gst} {args.width}x{args.height}@{args.fps}",

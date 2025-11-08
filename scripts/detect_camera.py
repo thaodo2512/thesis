@@ -15,8 +15,6 @@ Run inside the dev container with hardware mapped for best results:
       python3 scripts/detect_camera.py
 """
 
-from __future__ import annotations
-
 import argparse
 import glob
 import json
@@ -24,13 +22,18 @@ import os
 import re
 import subprocess
 import sys
-from dataclasses import dataclass, asdict
+try:
+    from dataclasses import dataclass, asdict  # Python 3.7+, or backport
+except ImportError:
+    import sys
+    sys.exit("[detect_camera] Missing 'dataclasses'. On Python 3.6 install backport: pip install dataclasses")
+
 from typing import List, Optional
 
 import cv2
 
 
-def which(cmd: str) -> bool:
+def which(cmd):
     from shutil import which as _which
 
     return _which(cmd) is not None
@@ -55,15 +58,19 @@ def list_v4l2_devices() -> List[str]:
     return [d for d in devs if re.match(r"/dev/video\d+", d)]
 
 
-def probe_v4l2_device(dev: str) -> V4L2Device:
+def probe_v4l2_device(dev):
     driver = None
     card = None
     if which("v4l2-ctl"):
         try:
             out = subprocess.run(
-                ["v4l2-ctl", "--all", "-d", dev], capture_output=True, text=True, timeout=3
+                ["v4l2-ctl", "--all", "-d", dev],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+                timeout=3,
             )
-            text = out.stdout
+            text = out.stdout or ""
             m = re.search(r"Driver name:\s*(.+)", text)
             if m:
                 driver = m.group(1).strip()
@@ -84,15 +91,16 @@ def probe_v4l2_device(dev: str) -> V4L2Device:
     return V4L2Device(path=dev, driver=driver, card=card, can_open=can_open)
 
 
-def probe_csi(width: int = 1280, height: int = 720, fps: int = 30) -> CSIStatus:
+def probe_csi(width=1280, height=720, fps=30):
     gst_present = which("gst-inspect-1.0")
     if gst_present:
         # Confirm Argus plugin exists
         try:
             r = subprocess.run(
                 ["gst-inspect-1.0", "nvarguscamerasrc"],
-                capture_output=True,
-                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
                 timeout=3,
             )
             if r.returncode != 0:
@@ -116,7 +124,7 @@ def probe_csi(width: int = 1280, height: int = 720, fps: int = 30) -> CSIStatus:
     return CSIStatus(gst_present=gst_present, can_open=can_open)
 
 
-def classify(v4l2_devs: List[V4L2Device], csi: CSIStatus) -> str:
+def classify(v4l2_devs, csi):
     has_uvc = any(
         d.can_open and (d.driver or "").lower().startswith("uvc") for d in v4l2_devs
     )
@@ -134,7 +142,7 @@ def classify(v4l2_devs: List[V4L2Device], csi: CSIStatus) -> str:
     return "none"
 
 
-def recommend(kind: str, v4l2_devs: List[V4L2Device]) -> str:
+def recommend(kind, v4l2_devs):
     if kind in ("usb_uvc", "v4l2_other", "both"):
         # Prefer the first openable V4L2 device
         dev = next((d.path for d in v4l2_devs if d.can_open), 
@@ -145,7 +153,7 @@ def recommend(kind: str, v4l2_devs: List[V4L2Device]) -> str:
     return "No camera detected. Check connections and permissions."
 
 
-def main(argv: list[str]) -> int:
+def main(argv):
     ap = argparse.ArgumentParser(description="Detect camera type and usage recommendation")
     ap.add_argument("--json", action="store_true", help="Emit JSON summary")
     args = ap.parse_args(argv)
@@ -195,4 +203,3 @@ def main(argv: list[str]) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv[1:]))
-

@@ -8,3 +8,4 @@ scipy
 gymnasium
 pyyaml
 tqdm
+dataclasses; python_version < "3.7"
