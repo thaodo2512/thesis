@@ -26,17 +26,14 @@ This project targets NVIDIA Jetson Nano-powered JetBot platforms that need to na
 4. Verify JetBot drivers with `python scripts/check_hardware.py` (to be implemented).
 
 ## Docker Compose Usage
-- Build and launch Jupyter Lab for development:
+- Build and launch Jupyter Lab for development (camera mapped via docker-compose.yml):
   ```bash
   docker compose up --build dev
   ```
   Then open `http://<jetson-ip>:8888`.
-
-- Start Jupyter with USB camera mapped (recommended for live preview):
-  ```bash
-  docker compose run --rm --service-ports --device /dev/video0:/dev/video0 dev
-  ```
-  If your camera is a different node, replace `/dev/video0` accordingly. Check with `ls -l /dev/video*`.
+  
+  The dev service now maps a camera device by default using `devices:` in `docker-compose.yml`.
+  To use a different node, set `VIDEO_DEVICE` before launching (e.g., `export VIDEO_DEVICE=/dev/video1`).
 - Capture a camera snapshot (requires `/dev/video0`):
   ```bash
   docker compose --profile hardware run --rm camera-test
@@ -44,15 +41,13 @@ This project targets NVIDIA Jetson Nano-powered JetBot platforms that need to na
   Snapshot saved to `notebooks/camera_snapshot.jpg`.
 
 - Live camera stream (view in browser at `http://<jetson-ip>:8080`):
-  - USB/UVC camera
+  - From an interactive terminal inside the running dev container:
     ```bash
-    docker compose run --rm --service-ports --device /dev/video0:/dev/video0 dev \
-      python3 scripts/camera_stream.py --device /dev/video0 --width 1280 --height 720 --fps 30 --port 8080
+    python3 scripts/camera_stream.py --device ${VIDEO_DEVICE:-/dev/video0} --width 1280 --height 720 --fps 30 --port 8080
     ```
-  - CSI (Raspberry Pi-style) camera via GStreamer
+  - CSI (Raspberry Pi-style) camera via GStreamer:
     ```bash
-    docker compose run --rm --service-ports dev \
-      python3 scripts/camera_stream.py --gst --width 1280 --height 720 --fps 30 --port 8080
+    python3 scripts/camera_stream.py --gst --width 1280 --height 720 --fps 30 --port 8080
     ```
 - Patrol test to drive the JetBot in a simple loop:
   ```bash

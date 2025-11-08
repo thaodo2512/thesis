@@ -17,9 +17,14 @@ services:
     ports:
       - "8888:8888"
       - "8080:8080" # camera_stream.py
+    # Map a camera device into the dev container so Jupyter/OpenCV can access it.
+    # Override VIDEO_DEVICE in your shell or .env (e.g., VIDEO_DEVICE=/dev/video1)
+    devices:
+      - "${VIDEO_DEVICE:-/dev/video0}:${VIDEO_DEVICE:-/dev/video0}"
     environment:
       TZ: "Etc/UTC"
       JUPYTER_ENABLE_LAB: "yes"
+      VIDEO_DEVICE: "${VIDEO_DEVICE:-/dev/video0}"
     command: ["jupyter", "lab", "--ip=0.0.0.0", "--no-browser", "--LabApp.token=", "--LabApp.password="]
     deploy:
       resources:
