@@ -11,7 +11,10 @@ ENV DEBIAN_FRONTEND=noninteractive \
     TZ=Etc/UTC
 
 # System dependencies for science stack, camera, GPIO, and I2C access; remove stale Kitware repo first.
-RUN sed -i '/apt\.kitware\.com/d' /etc/apt/sources.list \
+RUN echo "deb https://repo.download.nvidia.com/jetson/common r32.7 main" > /etc/apt/sources.list.d/nvidia-l4t-apt-source.list \
+ && echo "deb https://repo.download.nvidia.com/jetson/t210 r32.7 main" >> /etc/apt/sources.list.d/nvidia-l4t-apt-source.list \
+ && apt-key adv --fetch-keys https://repo.download.nvidia.com/jetson/jetson-ota-public.asc \
+ && sed -i '/apt\.kitware\.com/d' /etc/apt/sources.list \
  && (find /etc/apt/sources.list.d -name '*kitware*' -delete || true) \
  && apt-get update \
  && apt-get install -y --no-install-recommends \
