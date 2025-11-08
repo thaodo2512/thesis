@@ -36,6 +36,10 @@ RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel \
  && python3 -m pip install --no-cache-dir jetson-utils Jetson.GPIO \
  && rm /tmp/requirements.txt
 
+# Make python/pip resolve to Python 3 for CLI convenience
+RUN ln -sf /usr/bin/python3 /usr/local/bin/python \
+ && ln -sf /usr/bin/pip3 /usr/local/bin/pip
+
 # Ensure GPIO udev rules exist so the non-root user can access pins.
 RUN groupadd -f gpio \
  && cp /usr/local/lib/python3.6/dist-packages/Jetson/GPIO/99-gpio.rules /etc/udev/rules.d/99-gpio.rules \
