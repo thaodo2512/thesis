@@ -65,6 +65,20 @@ This project targets NVIDIA Jetson Nano-powered JetBot platforms that need to na
   ```
   Override speed and duration with env vars (`LINE_SPEED`, `TURN_SPEED`, `STEP_SECONDS`, `TURN_SECONDS`, `PATROL_LAPS`).
 
+## Host Camera Diagnostics
+- Before blaming Docker, confirm the Jetson host can see the CSI camera and Argus socket:
+  ```bash
+  bash scripts/check_host_camera.sh --skip-pipeline
+  ```
+  This checks `nvargus-daemon`, the `/dev/video*` nodes, and `/tmp/argus_socket`.
+- For a headless snapshot (no display required):
+  ```bash
+  bash scripts/check_host_camera.sh --headless --output /tmp/host_camera_check.jpg
+  ```
+  The script runs `gst-launch-1.0` with `nvarguscamerasrc` + `nvjpegenc`, saves a JPEG, and reports its path.
+- With a display attached, drop `--headless` to open a live preview window via `xvimagesink`.
+- Override sensor parameters via flags (`--sensor-id`, `--width`, `--height`, `--fps`) or environment variables (`CSI_SENSOR_ID`, etc.).
+
 ## Helpful Scripts & Notebook
 - Detect CSI support and get a recommended command:
   ```bash
