@@ -34,6 +34,8 @@ RUN sed -i '/apt\.kitware\.com/d' /etc/apt/sources.list \
     libgstreamer1.0-0 \
     libgstreamer-plugins-base1.0-0 \
     libgstreamer-plugins-bad1.0-0 \
+    nvidia-l4t-gstreamer \
+    nvidia-l4t-jetson-multimedia-api \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 

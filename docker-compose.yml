@@ -39,6 +39,7 @@ services:
     profiles: [hardware]
     privileged: true
     network_mode: host
+    ipc: host
     command: ["python3", "scripts/test_camera.py"]
     environment:
       TZ: "Etc/UTC"
@@ -50,6 +51,8 @@ services:
       - ./:/workspace:rw
       - /tmp/.X11-unix:/tmp/.X11-unix:ro
       - /tmp/argus_socket:/tmp/argus_socket
+      - /usr/lib/aarch64-linux-gnu/gstreamer-1.0:/usr/lib/aarch64-linux-gnu/gstreamer-1.0:ro
+      - /usr/lib/aarch64-linux-gnu/tegra:/usr/lib/aarch64-linux-gnu/tegra:ro
     devices:
       - "/dev/video${CSI_SENSOR_ID:-0}:/dev/video${CSI_SENSOR_ID:-0}"
     deploy:
@@ -87,6 +90,7 @@ services:
     privileged: true
     runtime: nvidia
     network_mode: host
+    ipc: host
     environment:
       TZ: "Etc/UTC"
       CSI_WIDTH: "${CSI_WIDTH:-1280}"
@@ -95,9 +99,13 @@ services:
       CSI_SENSOR_ID: "${CSI_SENSOR_ID:-0}"
       # CSI_SENSOR_MODE: "${CSI_SENSOR_MODE:-}"
       STREAM_PORT: "${STREAM_PORT:-8080}"
+      # Optional: raise GST debug level during troubleshooting
+      # GST_DEBUG: "2"
     volumes:
       - ./:/workspace:rw
       - /tmp/argus_socket:/tmp/argus_socket
+      - /usr/lib/aarch64-linux-gnu/gstreamer-1.0:/usr/lib/aarch64-linux-gnu/gstreamer-1.0:ro
+      - /usr/lib/aarch64-linux-gnu/tegra:/usr/lib/aarch64-linux-gnu/tegra:ro
     devices:
       - "/dev/video${CSI_SENSOR_ID:-0}:/dev/video${CSI_SENSOR_ID:-0}"
     command: ["python3", "scripts/camera_stream.py"]
