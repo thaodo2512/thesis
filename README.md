@@ -51,6 +51,14 @@ This project targets NVIDIA Jetson Nano-powered JetBot platforms that need to na
   docker compose --profile hardware up camera-stream
   ```
   Then open `http://<jetson-ip>:${STREAM_PORT-8080}`. If port 8080 is already used (e.g., by `dev`), set `STREAM_PORT` to another value before starting.
+
+### Using a `.env` file
+- Copy the example and tweak for your camera/port:
+  ```bash
+  cp .env.example .env
+  # edit .env (e.g., set CSI_SENSOR_MODE=3 for IMX219 1640x1232@30)
+  docker compose --profile hardware up camera-stream
+  ```
 - Patrol test to drive the JetBot in a simple loop:
   ```bash
   docker compose --profile hardware run --rm jetbot-patrol

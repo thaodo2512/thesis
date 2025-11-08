@@ -184,7 +184,12 @@ def parse_args(argv):
     parser.add_argument("--width", type=int, default=_env_int("CSI_WIDTH", 1280))
     parser.add_argument("--height", type=int, default=_env_int("CSI_HEIGHT", 720))
     parser.add_argument("--fps", type=int, default=_env_int("CSI_FPS", 30))
-    parser.add_argument("--flip", type=int, default=0, help="Flip method for CSI camera (0..7)")
+    parser.add_argument(
+        "--flip",
+        type=int,
+        default=_env_int("CSI_FLIP", 0),
+        help="Flip method for CSI camera (0..7)",
+    )
     parser.add_argument("--sensor-id", type=int, default=int(os.getenv("CSI_SENSOR_ID", 0)))
     parser.add_argument(
         "--sensor-mode",
