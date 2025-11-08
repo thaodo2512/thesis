@@ -23,6 +23,7 @@ import sys
 import threading
 import time
 from http import server
+from pathlib import Path
 from typing import Optional, List
 import socketserver
 
@@ -97,13 +98,46 @@ class FrameGrabber:
                 time.sleep(self.target_interval)
 
 
+def _describe_path(prefix: str, path: Path) -> None:
+    if path.exists():
+        try:
+            stat = path.stat()
+            print(
+                f"[camera-stream][debug] {prefix}: exists owner={stat.st_uid}:{stat.st_gid} "
+                f"mode={oct(stat.st_mode & 0o777)}"
+            )
+        except OSError as exc:
+            print(f"[camera-stream][debug] {prefix}: exists but stat failed ({exc})")
+    else:
+        print(f"[camera-stream][debug] {prefix}: MISSING")
+
+
+def log_environment(args, pipeline: str) -> None:
+    print(f"[camera-stream][debug] Attempting pipeline: {pipeline}")
+    _describe_path("Argus socket /tmp/argus_socket", Path("/tmp/argus_socket"))
+    _describe_path(f"CSI device /dev/video{args.sensor_id}", Path(f"/dev/video{args.sensor_id}"))
+    video_nodes = sorted(Path("/dev").glob("video*"))
+    print(
+        "[camera-stream][debug] Video nodes visible: "
+        + (", ".join(node.name for node in video_nodes) if video_nodes else "<none>")
+    )
+    print(
+        "[camera-stream][debug] Env CSI_WIDTH/HEIGHT/FPS/ID/MODE="
+        f"{args.width}/{args.height}/{args.fps}/{args.sensor_id}/{args.sensor_mode}"
+    )
+
+
 def build_capture(args):
     pipeline = gstreamer_pipeline(
         args.width, args.height, args.fps, args.flip, args.sensor_id, args.sensor_mode
     )
+    log_environment(args, pipeline)
     cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
     if not cap.isOpened():
-        sys.exit("[camera-stream] Unable to open CSI camera via nvarguscamerasrc. Is Argus available?")
+        sys.exit(
+            "[camera-stream] Unable to open CSI camera via nvarguscamerasrc. "
+            "See debug output above for Argus/device status."
+        )
     return cap
 
 

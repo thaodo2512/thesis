@@ -18,6 +18,38 @@ pipeline = (
     f"video/x-raw(memory:NVMM), width={WIDTH}, height={HEIGHT}, framerate={FPS}/1 "
     "! nvvidconv ! video/x-raw, format=RGBA ! appsink drop=true max-buffers=1 sync=false"
 )
+
+
+def _describe_path(prefix: str, path: Path) -> None:
+    if path.exists():
+        try:
+            stat = path.stat()
+            print(
+                f"[camera-test][debug] {prefix}: exists owner={stat.st_uid}:{stat.st_gid} "
+                f"mode={oct(stat.st_mode & 0o777)}"
+            )
+        except OSError as exc:
+            print(f"[camera-test][debug] {prefix}: exists but stat failed ({exc})")
+    else:
+        print(f"[camera-test][debug] {prefix}: MISSING")
+
+
+def log_environment() -> None:
+    print(
+        "[camera-test][debug] Env CSI_WIDTH/HEIGHT/FPS/ID/MODE="
+        f"{WIDTH}/{HEIGHT}/{FPS}/{SENSOR_ID}/{SENSOR_MODE}"
+    )
+    print(f"[camera-test][debug] Pipeline: {pipeline}")
+    _describe_path("Argus socket /tmp/argus_socket", Path("/tmp/argus_socket"))
+    _describe_path(f"CSI device /dev/video{SENSOR_ID}", Path(f"/dev/video{SENSOR_ID}"))
+    video_nodes = sorted(Path("/dev").glob("video*"))
+    print(
+        "[camera-test][debug] Video nodes visible: "
+        + (", ".join(node.name for node in video_nodes) if video_nodes else "<none>")
+    )
+
+
+log_environment()
 print(
     f"[camera-test] Opening CSI pipeline: {WIDTH}x{HEIGHT}@{FPS} sensor-id={SENSOR_ID} sensor-mode={SENSOR_MODE}"
 )
