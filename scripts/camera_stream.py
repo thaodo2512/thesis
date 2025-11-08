@@ -148,7 +148,12 @@ def _log_gstreamer_probe():
         if not shutil.which(cmd[0]):
             print(f"[camera-stream][warn] {cmd[0]} not found in PATH")
             return
-        proc = subprocess.run(cmd, capture_output=True, text=True)
+        proc = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+        )
         print(
             f"[camera-stream][debug] exit={proc.returncode} stdout:\n"
             + (proc.stdout[:800] if proc.stdout else "<empty>")
