@@ -7,18 +7,22 @@ WIDTH="${CSI_WIDTH:-1280}"
 HEIGHT="${CSI_HEIGHT:-720}"
 FPS="${CSI_FPS:-30}"
 RUN_PIPELINE=1
+HEADLESS=0
+OUTPUT_PATH="${CHECK_HOST_CAMERA_OUTPUT:-/tmp/host_camera_check.jpg}"
 
 usage() {
     cat <<'EOF'
-Usage: scripts/check_host_camera.sh [--skip-pipeline] [--sensor-id N] [--width PX] [--height PX] [--fps N]
+Usage: scripts/check_host_camera.sh [--skip-pipeline] [--headless] [--output PATH] \\
+       [--sensor-id N] [--width PX] [--height PX] [--fps N]
 
 Checks:
   1. Argus daemon status via systemctl (restart suggestion if inactive).
   2. Lists /dev/video* nodes present on the host.
   3. Verifies /tmp/argus_socket existence and ownership.
-  4. (Optional) Runs a gst-launch pipeline using nvarguscamerasrc to display a live feed.
+  4. (Optional) Runs a gst-launch pipeline using nvarguscamerasrc to display a live feed
+     or, with --headless, captures a JPEG snapshot to --output (default /tmp/host_camera_check.jpg).
 
-Environment overrides: CSI_SENSOR_ID, CSI_WIDTH, CSI_HEIGHT, CSI_FPS.
+Environment overrides: CSI_SENSOR_ID, CSI_WIDTH, CSI_HEIGHT, CSI_FPS, CHECK_HOST_CAMERA_OUTPUT.
 EOF
 }
 
@@ -41,6 +45,14 @@ while [[ $# -gt 0 ]]; do
             ;;
         --fps)
             FPS="$2"
+            shift 2
+            ;;
+        --headless)
+            HEADLESS=1
+            shift
+            ;;
+        --output)
+            OUTPUT_PATH="$2"
             shift 2
             ;;
         --skip-pipeline)
@@ -89,15 +101,27 @@ else
 fi
 
 if (( RUN_PIPELINE )); then
-    log "Running gst-launch pipeline (sensor-id=${SENSOR_ID}, ${WIDTH}x${HEIGHT}@${FPS})"
-    PIPELINE=(
-        gst-launch-1.0
-        nvarguscamerasrc "sensor-id=${SENSOR_ID}"
-        "!" "video/x-raw(memory:NVMM),width=${WIDTH},height=${HEIGHT},framerate=${FPS}/1"
-        "!" nvvidconv
-        "!" videoconvert
-        "!" xvimagesink
-    )
+    if (( HEADLESS )); then
+        log "Running headless gst-launch snapshot (sensor-id=${SENSOR_ID}, output=${OUTPUT_PATH})"
+        PIPELINE=(
+            gst-launch-1.0
+            nvarguscamerasrc "sensor-id=${SENSOR_ID}" "num-buffers=1"
+            "!" "video/x-raw(memory:NVMM),width=${WIDTH},height=${HEIGHT},framerate=${FPS}/1"
+            "!" nvvidconv
+            "!" jpegenc
+            "!" "filesink location=${OUTPUT_PATH}"
+        )
+    else
+        log "Running gst-launch display pipeline (sensor-id=${SENSOR_ID}, ${WIDTH}x${HEIGHT}@${FPS})"
+        PIPELINE=(
+            gst-launch-1.0
+            nvarguscamerasrc "sensor-id=${SENSOR_ID}"
+            "!" "video/x-raw(memory:NVMM),width=${WIDTH},height=${HEIGHT},framerate=${FPS}/1"
+            "!" nvvidconv
+            "!" videoconvert
+            "!" xvimagesink
+        )
+    fi
     printf '[check-host-camera][info] %s '\
         "${PIPELINE[@]}"
     printf '\n'
