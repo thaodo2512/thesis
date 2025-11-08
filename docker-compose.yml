@@ -73,20 +73,13 @@ services:
       - "${STREAM_PORT:-8080}:8080"
     environment:
       TZ: "Etc/UTC"
-      CSI_WIDTH: "1280"
-      CSI_HEIGHT: "720"
-      CSI_FPS: "30"
-      CSI_SENSOR_ID: "0"
-      # CSI_SENSOR_MODE: ""   # optionally set in shell or .env
-      STREAM_PORT: "8080"
-    command: [
-      "python3", "scripts/camera_stream.py",
-      "--width", "${CSI_WIDTH}",
-      "--height", "${CSI_HEIGHT}",
-      "--fps", "${CSI_FPS}",
-      "--sensor-id", "${CSI_SENSOR_ID}",
-      "--port", "${STREAM_PORT}"
-    ]
+      CSI_WIDTH: "${CSI_WIDTH:-1280}"
+      CSI_HEIGHT: "${CSI_HEIGHT:-720}"
+      CSI_FPS: "${CSI_FPS:-30}"
+      CSI_SENSOR_ID: "${CSI_SENSOR_ID:-0}"
+      # CSI_SENSOR_MODE: "${CSI_SENSOR_MODE:-}"
+      STREAM_PORT: "${STREAM_PORT:-8080}"
+    command: ["python3", "scripts/camera_stream.py"]
     deploy:
       resources:
         reservations:
