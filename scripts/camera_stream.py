@@ -29,17 +29,17 @@ import socketserver
 import cv2
 
 
-def gstreamer_pipeline(width: int, height: int, fps: int, flip: int = 0) -> str:
+def gstreamer_pipeline(width, height, fps, flip=0, sensor_id=0, sensor_mode=None):
     """Build a GStreamer pipeline for Jetson CSI camera.
 
     flip: 0 (none), 2 (flip horizontal), 4 (flip vertical), etc.
     """
+    mode = f" sensor-mode={sensor_mode}" if sensor_mode is not None else ""
     return (
-        "nvarguscamerasrc ! "
+        f"nvarguscamerasrc sensor-id={sensor_id}{mode} ! "
         f"video/x-raw(memory:NVMM), width={width}, height={height}, framerate={fps}/1 "
-        "! nvvidconv "
-        f"flip-method={flip} "
-        "! video/x-raw, format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink"
+        f"! nvvidconv flip-method={flip} ! video/x-raw, format=RGBA ! "
+        "appsink drop=true max-buffers=1 sync=false"
     )
 
 
@@ -83,7 +83,12 @@ class FrameGrabber:
                 # Small backoff and try again
                 time.sleep(0.01)
                 continue
-            ok, buf = cv2.imencode(".jpg", frame, encode_param)
+            # Convert RGBA to BGR before JPEG encoding
+            if frame is not None and frame.ndim == 3 and frame.shape[2] == 4:
+                frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)
+            else:
+                frame_bgr = frame
+            ok, buf = cv2.imencode(".jpg", frame_bgr, encode_param)
             if ok:
                 with self._lock:
                     self._latest_jpeg = buf.tobytes()
@@ -93,7 +98,9 @@ class FrameGrabber:
 
 
 def build_capture(args):
-    pipeline = gstreamer_pipeline(args.width, args.height, args.fps, args.flip)
+    pipeline = gstreamer_pipeline(
+        args.width, args.height, args.fps, args.flip, args.sensor_id, args.sensor_mode
+    )
     cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
     if not cap.isOpened():
         sys.exit("[camera-stream] Unable to open CSI camera via nvarguscamerasrc. Is Argus available?")
@@ -171,6 +178,13 @@ def parse_args(argv):
     parser.add_argument("--height", type=int, default=720)
     parser.add_argument("--fps", type=int, default=30)
     parser.add_argument("--flip", type=int, default=0, help="Flip method for CSI camera (0..7)")
+    parser.add_argument("--sensor-id", type=int, default=int(os.getenv("CSI_SENSOR_ID", 0)))
+    parser.add_argument(
+        "--sensor-mode",
+        type=int,
+        default=(int(os.getenv("CSI_SENSOR_MODE")) if os.getenv("CSI_SENSOR_MODE") else None),
+        help="Argus sensor mode (optional)",
+    )
     parser.add_argument("--port", type=int, default=int(os.getenv("STREAM_PORT", 8080)))
     parser.add_argument("--quality", type=int, default=80, help="JPEG quality 1-100")
     return parser.parse_args(argv)

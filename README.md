@@ -40,6 +40,7 @@ This project targets NVIDIA Jetson Nano-powered JetBot platforms that need to na
 - Live camera stream (CSI via GStreamer; view at `http://<jetson-ip>:8080`):
   ```bash
   # Run inside the dev container terminal
+  # Optional: export CSI_SENSOR_ID=0 and CSI_SENSOR_MODE=<mode> (sensor-specific)
   python3 scripts/camera_stream.py --width 1280 --height 720 --fps 30 --port 8080
   ```
 - Patrol test to drive the JetBot in a simple loop:
