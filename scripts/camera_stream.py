@@ -143,7 +143,8 @@ def log_environment(args, pipeline: str) -> None:
         + os.getenv("GST_PLUGIN_PATH", "<unset>")
     )
     _log_gstreamer_probe()
-    _log_nvargus_daemon_status()
+    if _env_truthy("CHECK_NVARGUS", "0"):
+        _log_nvargus_daemon_status()
 
 
 def _log_gstreamer_probe():
@@ -372,3 +373,6 @@ def main(argv):
 
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv[1:]))
+def _env_truthy(name: str, default: str = "0") -> bool:
+    val = os.getenv(name, default)
+    return str(val).strip().lower() in {"1", "true", "yes", "on"}
