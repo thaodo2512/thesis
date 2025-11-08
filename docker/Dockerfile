@@ -17,6 +17,7 @@ RUN echo "deb https://repo.download.nvidia.com/jetson/common r32.7 main" > /etc/
  && sed -i '/apt\.kitware\.com/d' /etc/apt/sources.list \
  && (find /etc/apt/sources.list.d -name '*kitware*' -delete || true) \
  && apt-get update \
+ && mkdir -p /proc/device-tree && echo -ne 'nvidia,jetson-nano\0nvidia,tegra210-p3450-0000\0nvidia,tegra210\0' > /proc/device-tree/compatible \
  && apt-get install -y --no-install-recommends \
     python3-pip \
     python3-opencv \
@@ -40,7 +41,7 @@ RUN echo "deb https://repo.download.nvidia.com/jetson/common r32.7 main" > /etc/
     nvidia-l4t-gstreamer \
     nvidia-l4t-jetson-multimedia-api \
  && apt-get clean \
- && rm -rf /var/lib/apt/lists/*
+ && rm -rf /var/lib/apt/lists/* /proc/device-tree
 
 # Align container groups with host GIDs for device access (adjust IDs as needed).
 RUN groupadd -g 44 video || true \
