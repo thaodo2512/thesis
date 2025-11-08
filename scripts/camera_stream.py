@@ -84,6 +84,7 @@ class FrameGrabber:
             ok, frame = self.cap.read()
             if not ok or frame is None:
                 # Small backoff and try again
+                print("[camera-stream][debug] cap.read() failed or frame is None")
                 time.sleep(0.01)
                 continue
             # Convert RGBA to BGR before JPEG encoding
@@ -92,6 +93,8 @@ class FrameGrabber:
             else:
                 frame_bgr = frame
             ok, buf = cv2.imencode(".jpg", frame_bgr, encode_param)
+            if not ok:
+                print("[camera-stream][debug] cv2.imencode failed")
             if ok:
                 with self._lock:
                     self._latest_jpeg = buf.tobytes()
@@ -140,6 +143,7 @@ def log_environment(args, pipeline: str) -> None:
         + os.getenv("GST_PLUGIN_PATH", "<unset>")
     )
     _log_gstreamer_probe()
+    _log_nvargus_daemon_status()
 
 
 def _log_gstreamer_probe():
@@ -162,7 +166,46 @@ def _log_gstreamer_probe():
             print(f"[camera-stream][debug] stderr:\n{proc.stderr[:800]}")
 
     _run(["gst-inspect-1.0", "nvarguscamerasrc"])
+    _run(["gst-inspect-1.0", "nvvidconv"])
+    _run(["gst-inspect-1.0", "appsink"])
 
+
+def _log_nvargus_daemon_status():
+    # Note: This may not work inside container if systemctl isn't available or daemon is on host
+    cmd = ["systemctl", "status", "nvargus-daemon"]
+    print(f"[camera-stream][debug] $ {' '.join(cmd)} (may fail in container)")
+    proc = subprocess.run(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
+    print(f"[camera-stream][debug] exit={proc.returncode}")
+    if proc.stdout:
+        print(f"[camera-stream][debug] stdout:\n{proc.stdout[:800]}")
+    if proc.stderr:
+        print(f"[camera-stream][debug] stderr:\n{proc.stderr[:800]}")
+
+
+def test_pipeline(pipeline: str) -> None:
+    # Test the pipeline with gst-launch to get detailed errors
+    test_pipe = pipeline.replace("appsink drop=true max-buffers=1 sync=false", "fakesink num-buffers=1 sync=false")
+    cmd = ["gst-launch-1.0", "--gst-debug=3"] + test_pipe.split(" ! ")
+    print(f"[camera-stream][debug] Testing pipeline with gst-launch: {' '.join(cmd)}")
+    env = os.environ.copy()
+    env["GST_DEBUG"] = "3"  # Increase debug level for this test
+    proc = subprocess.run(
+        cmd,
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
+    print(f"[camera-stream][debug] exit={proc.returncode}")
+    if proc.stdout:
+        print(f"[camera-stream][debug] stdout:\n{proc.stdout}")
+    if proc.stderr:
+        print(f"[camera-stream][debug] stderr:\n{proc.stderr}")
 
 
 def build_capture(args):
@@ -170,12 +213,24 @@ def build_capture(args):
         args.width, args.height, args.fps, args.flip, args.sensor_id, args.sensor_mode
     )
     log_environment(args, pipeline)
+    
+    # Set global GST_DEBUG for more output
+    os.environ["GST_DEBUG"] = "3"
+    
     cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
     if not cap.isOpened():
+        print("[camera-stream][debug] cv2.VideoCapture failed to open. Running pipeline test...")
+        test_pipeline(pipeline)
         sys.exit(
             "[camera-stream] Unable to open CSI camera via nvarguscamerasrc. "
             "See debug output above for Argus/device status."
         )
+    else:
+        # Optional: Log some cap properties for debug
+        print(f"[camera-stream][debug] Capture opened successfully.")
+        print(f"[camera-stream][debug] CAP_PROP_FRAME_WIDTH: {cap.get(cv2.CAP_PROP_FRAME_WIDTH)}")
+        print(f"[camera-stream][debug] CAP_PROP_FRAME_HEIGHT: {cap.get(cv2.CAP_PROP_FRAME_HEIGHT)}")
+        print(f"[camera-stream][debug] CAP_PROP_FPS: {cap.get(cv2.CAP_PROP_FPS)}")
     return cap
 
 
@@ -311,3 +366,4 @@ def main(argv):
 
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv[1:]))
+
