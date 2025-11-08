@@ -20,6 +20,8 @@ RUN echo "deb https://repo.download.nvidia.com/jetson/common r32.7 main" > /etc/
  && mkdir -p /tmp/dt-fake \
  && echo -ne 'nvidia,jetson-nano\0nvidia,tegra210-p3450-0000\0nvidia,tegra210\0' > /tmp/dt-fake/compatible \
  && mount --bind /tmp/dt-fake /sys/firmware/devicetree/base || true \
+ && rm -rf /proc/device-tree || true \
+ && ln -sf /sys/firmware/devicetree/base /proc/device-tree || true \
  && apt-get install -y --no-install-recommends \
     python3-pip \
     python3-opencv \
@@ -42,6 +44,8 @@ RUN echo "deb https://repo.download.nvidia.com/jetson/common r32.7 main" > /etc/
     libgstreamer-plugins-bad1.0-0 \
     nvidia-l4t-gstreamer \
     nvidia-l4t-jetson-multimedia-api \
+ && umount /sys/firmware/devicetree/base || true \
+ && rm -f /proc/device-tree || true \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/dt-fake
 
