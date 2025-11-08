@@ -31,7 +31,7 @@ This project targets NVIDIA Jetson Nano-powered JetBot platforms that need to na
   docker compose up --build dev
   ```
   Then open `http://<jetson-ip>:8888`.
-- Capture a camera snapshot (requires `/dev/video0`):
+- Capture a camera snapshot (CSI via Argus):
   ```bash
   docker compose --profile hardware run --rm camera-test
   ```
