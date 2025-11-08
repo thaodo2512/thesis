@@ -26,8 +26,20 @@ RUN sed -i '/apt\.kitware\.com/d' /etc/apt/sources.list \
     i2c-tools \
     libjpeg-dev \
     zlib1g-dev \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    gstreamer1.0-tools \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    libgstreamer1.0-0 \
+    libgstreamer-plugins-base1.0-0 \
+    libgstreamer-plugins-bad1.0-0 \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
+
+# Align container groups with host GIDs for device access (adjust IDs as needed).
+RUN groupadd -g 44 video || true \
+ && groupadd -g 1002 i2c || true
 
 # Python dependencies.
 COPY requirements.txt /tmp/requirements.txt
@@ -53,6 +65,8 @@ ARG USER_GID=1000
 RUN if ! getent group ${USER_GID} >/dev/null; then groupadd --gid ${USER_GID} ${USERNAME}; fi \
  && if ! id -u ${USERNAME} >/dev/null 2>&1; then useradd --uid ${USER_UID} --gid ${USER_GID} -m ${USERNAME}; else usermod --gid ${USER_GID} ${USERNAME}; fi \
  && usermod -aG video,i2c,gpio ${USERNAME}
+
+ENV LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu/tegra:/usr/lib/aarch64-linux-gnu/tegra-egl:${LD_LIBRARY_PATH}
 
 WORKDIR /workspace
 USER ${USERNAME}
