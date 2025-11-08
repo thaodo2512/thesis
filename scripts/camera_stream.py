@@ -171,20 +171,26 @@ def _log_gstreamer_probe():
 
 
 def _log_nvargus_daemon_status():
-    # Note: This may not work inside container if systemctl isn't available or daemon is on host
+    # Note: In containers, systemctl is typically unavailable; skip gracefully.
+    if not shutil.which("systemctl"):
+        print("[camera-stream][debug] systemctl not found; skipping nvargus-daemon status (expected in containers)")
+        return
     cmd = ["systemctl", "status", "nvargus-daemon"]
     print(f"[camera-stream][debug] $ {' '.join(cmd)} (may fail in container)")
-    proc = subprocess.run(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        universal_newlines=True,
-    )
-    print(f"[camera-stream][debug] exit={proc.returncode}")
-    if proc.stdout:
-        print(f"[camera-stream][debug] stdout:\n{proc.stdout[:800]}")
-    if proc.stderr:
-        print(f"[camera-stream][debug] stderr:\n{proc.stderr[:800]}")
+    try:
+        proc = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+        )
+        print(f"[camera-stream][debug] exit={proc.returncode}")
+        if proc.stdout:
+            print(f"[camera-stream][debug] stdout:\n{proc.stdout[:800]}")
+        if proc.stderr:
+            print(f"[camera-stream][debug] stderr:\n{proc.stderr[:800]}")
+    except Exception as exc:
+        print(f"[camera-stream][debug] systemctl invocation failed: {exc}")
 
 
 def test_pipeline(pipeline: str) -> None:
@@ -366,4 +372,3 @@ def main(argv):
 
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv[1:]))
-
