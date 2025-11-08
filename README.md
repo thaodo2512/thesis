@@ -79,6 +79,13 @@ This project targets NVIDIA Jetson Nano-powered JetBot platforms that need to na
 - With a display attached, drop `--headless` to open a live preview window via `xvimagesink`.
 - Override sensor parameters via flags (`--sensor-id`, `--width`, `--height`, `--fps`) or environment variables (`CSI_SENSOR_ID`, etc.).
 
+## Docker Cleanup Helper
+- To reclaim disk space by deleting **all** Docker containers, images, volumes, and cache, run:
+  ```bash
+  bash scripts/docker_clean_all.sh
+  ```
+  The script prints a warning/prompt before proceeding. Use only when you intend to wipe Docker data on the host.
+
 ## Helpful Scripts & Notebook
 - Detect CSI support and get a recommended command:
   ```bash
