@@ -19,6 +19,8 @@ Environment variables (optional)
 
 import argparse
 import os
+import shutil
+import subprocess
 import sys
 import threading
 import time
@@ -125,6 +127,37 @@ def log_environment(args, pipeline: str) -> None:
         "[camera-stream][debug] Env CSI_WIDTH/HEIGHT/FPS/ID/MODE="
         f"{args.width}/{args.height}/{args.fps}/{args.sensor_id}/{args.sensor_mode}"
     )
+    print(
+        "[camera-stream][debug] UID/GID="
+        f"{os.getuid()}/{os.getgid()} groups={','.join(str(g) for g in os.getgroups())}"
+    )
+    print(
+        "[camera-stream][debug] LD_LIBRARY_PATH="
+        + os.getenv("LD_LIBRARY_PATH", "<unset>")
+    )
+    print(
+        "[camera-stream][debug] GST_PLUGIN_PATH="
+        + os.getenv("GST_PLUGIN_PATH", "<unset>")
+    )
+    _log_gstreamer_probe()
+
+
+def _log_gstreamer_probe():
+    def _run(cmd: List[str]) -> None:
+        print(f"[camera-stream][debug] $ {' '.join(cmd)}")
+        if not shutil.which(cmd[0]):
+            print(f"[camera-stream][warn] {cmd[0]} not found in PATH")
+            return
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        print(
+            f"[camera-stream][debug] exit={proc.returncode} stdout:\n"
+            + (proc.stdout[:800] if proc.stdout else "<empty>")
+        )
+        if proc.stderr:
+            print(f"[camera-stream][debug] stderr:\n{proc.stderr[:800]}")
+
+    _run(["gst-inspect-1.0", "nvarguscamerasrc"])
+
 
 
 def build_capture(args):
