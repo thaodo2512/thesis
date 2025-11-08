@@ -24,7 +24,7 @@ RUN echo "deb https://repo.download.nvidia.com/jetson/common r32.7 main" > /etc/
  && ln -sf /sys/firmware/devicetree/base /proc/device-tree || true \
  && apt-get install -y --no-install-recommends \
     python3-pip \
-    python3-opencv \
+    libopencv-python \
     python3-matplotlib \
     libgl1 \
     v4l-utils \
