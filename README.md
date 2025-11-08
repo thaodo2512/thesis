@@ -43,6 +43,14 @@ This project targets NVIDIA Jetson Nano-powered JetBot platforms that need to na
   # Optional: export CSI_SENSOR_ID=0 and CSI_SENSOR_MODE=<mode> (sensor-specific)
   python3 scripts/camera_stream.py --width 1280 --height 720 --fps 30 --port 8080
   ```
+
+- Live camera stream via Docker Compose service (CSI):
+  ```bash
+  # Optional: export overrides, e.g.
+  # export STREAM_PORT=8080 CSI_SENSOR_ID=0 CSI_WIDTH=1280 CSI_HEIGHT=720 CSI_FPS=30
+  docker compose --profile hardware up camera-stream
+  ```
+  Then open `http://<jetson-ip>:${STREAM_PORT-8080}`. If port 8080 is already used (e.g., by `dev`), set `STREAM_PORT` to another value before starting.
 - Patrol test to drive the JetBot in a simple loop:
   ```bash
   docker compose --profile hardware run --rm jetbot-patrol

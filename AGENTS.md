@@ -14,6 +14,7 @@ Maintain a predictable layout so research code, notebooks, and manuscript evolve
 Prefer reproducible containers, but keep local virtualenv parity:
 - `docker compose up --build dev` – start Jupyter Lab on port 8888 for development.
 - `docker compose --profile hardware run --rm camera-test` – capture a CSI snapshot via Argus (saves to `notebooks/camera_snapshot.jpg`).
+- `docker compose --profile hardware up camera-stream` – start CSI live stream service (serves on `${STREAM_PORT:-8080}`).
 - `docker compose --profile hardware run --rm jetbot-patrol` – drive the JetBot in a loop; tune speed via env vars.
 - `python -m venv .venv && source .venv/bin/activate` – local virtual environment when debugging off-device.
 - `pip install -r requirements.txt` – sync Python deps.
