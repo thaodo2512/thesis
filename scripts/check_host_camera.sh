@@ -103,29 +103,25 @@ fi
 if (( RUN_PIPELINE )); then
     if (( HEADLESS )); then
         log "Running headless gst-launch snapshot (sensor-id=${SENSOR_ID}, output=${OUTPUT_PATH})"
-        PIPELINE=(
-            gst-launch-1.0
-            nvarguscamerasrc "sensor-id=${SENSOR_ID}" "num-buffers=1"
-            "!" "video/x-raw(memory:NVMM),width=${WIDTH},height=${HEIGHT},framerate=${FPS}/1"
-            "!" nvvidconv
-            "!" jpegenc
-            "!" "filesink location=${OUTPUT_PATH}"
-        )
+        gst-launch-1.0 \
+            nvarguscamerasrc sensor-id="${SENSOR_ID}" num-buffers=1 ! \
+            'video/x-raw(memory:NVMM), width='"${WIDTH}"', height='"${HEIGHT}"', framerate='"${FPS}"'/1' ! \
+            nvjpegenc ! \
+            filesink location="${OUTPUT_PATH}"
+        if [[ -e "${OUTPUT_PATH}" ]]; then
+            log "Snapshot saved to ${OUTPUT_PATH} (check with: ls -l ${OUTPUT_PATH})"
+        else
+            warn "Snapshot failed to save—check GStreamer errors above."
+        fi
     else
         log "Running gst-launch display pipeline (sensor-id=${SENSOR_ID}, ${WIDTH}x${HEIGHT}@${FPS})"
-        PIPELINE=(
-            gst-launch-1.0
-            nvarguscamerasrc "sensor-id=${SENSOR_ID}"
-            "!" "video/x-raw(memory:NVMM),width=${WIDTH},height=${HEIGHT},framerate=${FPS}/1"
-            "!" nvvidconv
-            "!" videoconvert
-            "!" xvimagesink
-        )
+        gst-launch-1.0 \
+            nvarguscamerasrc sensor-id="${SENSOR_ID}" ! \
+            'video/x-raw(memory:NVMM), width='"${WIDTH}"', height='"${HEIGHT}"', framerate='"${FPS}"'/1' ! \
+            nvvidconv ! \
+            videoconvert ! \
+            xvimagesink
     fi
-    printf '[check-host-camera][info] %s '\
-        "${PIPELINE[@]}"
-    printf '\n'
-    "${PIPELINE[@]}"
 else
     log "Skipping gst-launch pipeline (use --skip-pipeline to disable in future runs)."
 fi
