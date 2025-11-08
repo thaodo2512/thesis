@@ -31,16 +31,42 @@ This project targets NVIDIA Jetson Nano-powered JetBot platforms that need to na
   docker compose up --build dev
   ```
   Then open `http://<jetson-ip>:8888`.
+
+- Start Jupyter with USB camera mapped (recommended for live preview):
+  ```bash
+  docker compose run --rm --service-ports --device /dev/video0:/dev/video0 dev
+  ```
+  If your camera is a different node, replace `/dev/video0` accordingly. Check with `ls -l /dev/video*`.
 - Capture a camera snapshot (requires `/dev/video0`):
   ```bash
   docker compose --profile hardware run --rm camera-test
   ```
   Snapshot saved to `notebooks/camera_snapshot.jpg`.
+
+- Live camera stream (view in browser at `http://<jetson-ip>:8080`):
+  - USB/UVC camera
+    ```bash
+    docker compose run --rm --service-ports --device /dev/video0:/dev/video0 dev \
+      python3 scripts/camera_stream.py --device /dev/video0 --width 1280 --height 720 --fps 30 --port 8080
+    ```
+  - CSI (Raspberry Pi-style) camera via GStreamer
+    ```bash
+    docker compose run --rm --service-ports dev \
+      python3 scripts/camera_stream.py --gst --width 1280 --height 720 --fps 30 --port 8080
+    ```
 - Patrol test to drive the JetBot in a simple loop:
   ```bash
   docker compose --profile hardware run --rm jetbot-patrol
   ```
   Override speed and duration with env vars (`LINE_SPEED`, `TURN_SPEED`, `STEP_SECONDS`, `TURN_SECONDS`, `PATROL_LAPS`).
+
+## Helpful Scripts & Notebook
+- Detect camera type and get a recommended command:
+  ```bash
+  python3 scripts/detect_camera.py
+  ```
+- Notebook with end-to-end usage (detect, snapshot, live stream, patrol):
+  - Open `experiments/20251108_camera_and_robot_usage.ipynb` in Jupyter and run the cells.
 
 ## Roadmap
 - [ ] Draft requirements and baseline environments inside `sim/`.
