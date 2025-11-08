@@ -37,12 +37,21 @@ services:
     <<: *service_defaults
     container_name: jetbot-camera-test
     profiles: [hardware]
+    privileged: true
+    network_mode: host
     command: ["python3", "scripts/test_camera.py"]
     environment:
       TZ: "Etc/UTC"
       CSI_WIDTH: "1280"
       CSI_HEIGHT: "720"
       CSI_FPS: "30"
+      CSI_SENSOR_ID: "${CSI_SENSOR_ID:-0}"
+    volumes:
+      - ./:/workspace:rw
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro
+      - /tmp/argus_socket:/tmp/argus_socket
+    devices:
+      - "/dev/video${CSI_SENSOR_ID:-0}:/dev/video${CSI_SENSOR_ID:-0}"
     deploy:
       resources:
         reservations:
