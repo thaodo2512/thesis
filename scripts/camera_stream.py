@@ -1,23 +1,19 @@
 #!/usr/bin/env python3
-"""MJPEG camera streamer for Jetson/USB cameras.
+"""MJPEG camera streamer for Jetson CSI cameras (nvarguscamerasrc).
 
-- Opens a camera (UVC `/dev/video*` or CSI via GStreamer) and serves
-  a live MJPEG stream over HTTP so you can view it in any browser.
+- Opens the CSI camera via GStreamer (Argus) and serves a live MJPEG
+  stream over HTTP so you can view it in any browser.
   Useful in headless containers where GUI windows are unavailable.
 
 Examples
 --------
-- USB camera on `/dev/video0` at 1280x720@30fps, serve on port 8080:
-    python3 scripts/camera_stream.py --device /dev/video0 --width 1280 --height 720 --fps 30 --port 8080
-
-- CSI camera (Raspberry Pi cam) via GStreamer on Jetson:
-    python3 scripts/camera_stream.py --gst --width 1280 --height 720 --fps 30 --port 8080
+- Example: 1280x720@30fps, serve on port 8080:
+    python3 scripts/camera_stream.py --width 1280 --height 720 --fps 30 --port 8080
 
 Then open: http://<jetson-ip>:8080  (stream at /stream.mjpg)
 
 Environment variables (optional)
 --------------------------------
-- VIDEO_DEVICE: overrides --device (default "/dev/video0")
 - STREAM_PORT: overrides --port (default 8080)
 """
 
@@ -96,25 +92,11 @@ class FrameGrabber:
                 time.sleep(self.target_interval)
 
 
-def build_capture(args: argparse.Namespace) -> cv2.VideoCapture:
-    # Resolve device from env or CLI
-    device = os.getenv("VIDEO_DEVICE", args.device)
-    if args.gst:
-        pipeline = gstreamer_pipeline(args.width, args.height, args.fps, args.flip)
-        cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
-    else:
-        # Allow numeric index like "0" or path like "/dev/video0"
-        dev_spec = int(device) if device.isdigit() else device
-        cap = cv2.VideoCapture(dev_spec)
-        # Try to set UVC properties; not all cams honor these
-        if args.width:
-            cap.set(cv2.CAP_PROP_FRAME_WIDTH, float(args.width))
-        if args.height:
-            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, float(args.height))
-        if args.fps:
-            cap.set(cv2.CAP_PROP_FPS, float(args.fps))
+def build_capture(args):
+    pipeline = gstreamer_pipeline(args.width, args.height, args.fps, args.flip)
+    cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
     if not cap.isOpened():
-        sys.exit(f"[camera-stream] Unable to open camera: {device} (gst={args.gst})")
+        sys.exit("[camera-stream] Unable to open CSI camera via nvarguscamerasrc. Is Argus available?")
     return cap
 
 
@@ -184,15 +166,13 @@ def make_http_handler(grabber: FrameGrabber):
 
 
 def parse_args(argv):
-    parser = argparse.ArgumentParser(description="Live MJPEG camera streamer")
-    parser.add_argument("--device", default=os.getenv("VIDEO_DEVICE", "/dev/video0"))
+    parser = argparse.ArgumentParser(description="Live MJPEG camera streamer (CSI)")
     parser.add_argument("--width", type=int, default=1280)
     parser.add_argument("--height", type=int, default=720)
     parser.add_argument("--fps", type=int, default=30)
-    parser.add_argument("--flip", type=int, default=0, help="Flip method for CSI (gst) camera")
+    parser.add_argument("--flip", type=int, default=0, help="Flip method for CSI camera (0..7)")
     parser.add_argument("--port", type=int, default=int(os.getenv("STREAM_PORT", 8080)))
     parser.add_argument("--quality", type=int, default=80, help="JPEG quality 1-100")
-    parser.add_argument("--gst", action="store_true", help="Use CSI camera via GStreamer")
     return parser.parse_args(argv)
 
 
@@ -215,8 +195,8 @@ def main(argv):
         HTTPServer = ThreadingHTTPServer
     httpd = HTTPServer(addr, handler)
     print(
-        f"[camera-stream] Serving MJPEG on http://{addr[0]}:{addr[1]} (index/, stream.mjpg, snapshot.jpg)",
-        f"device={os.getenv('VIDEO_DEVICE', args.device)} gst={args.gst} {args.width}x{args.height}@{args.fps}",
+        f"[camera-stream] Serving MJPEG on http://{addr[0]}:{addr[1]} (index/, stream.mjpg, snapshot.jpg)"
+        f" {args.width}x{args.height}@{args.fps} via CSI (nvarguscamerasrc)",
     )
     try:
         httpd.serve_forever()

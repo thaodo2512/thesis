@@ -13,7 +13,7 @@ Maintain a predictable layout so research code, notebooks, and manuscript evolve
 ## Build, Test, and Development Commands
 Prefer reproducible containers, but keep local virtualenv parity:
 - `docker compose up --build dev` – start Jupyter Lab on port 8888 for development.
-- `docker compose --profile hardware run --rm camera-test` – capture a snapshot from `/dev/video0` (saves to `notebooks/camera_snapshot.jpg`).
+- `docker compose --profile hardware run --rm camera-test` – capture a CSI snapshot via Argus (saves to `notebooks/camera_snapshot.jpg`).
 - `docker compose --profile hardware run --rm jetbot-patrol` – drive the JetBot in a loop; tune speed via env vars.
 - `python -m venv .venv && source .venv/bin/activate` – local virtual environment when debugging off-device.
 - `pip install -r requirements.txt` – sync Python deps.
@@ -22,7 +22,7 @@ Prefer reproducible containers, but keep local virtualenv parity:
 Run `black` (line length 88) and `ruff` before committing; configure both in `pyproject.toml`. Use explicit module names (`laser_alignment.py`), snake_case functions, and descriptive notebook filenames. Keep notebooks clean with `nbstripout`. Thesis assets should be vector-first (`.svg`/`.pdf`) with slugified names.
 
 ## Testing Guidelines
-Target ≥90% coverage on `src/` via `pytest --cov=src --cov-report=term-missing`. Name tests after observable behavior (`test_spectrum_filter_handles_empty_input`). Place fixtures under `tests/fixtures/` and rely on factory helpers for paths. Hardware checks belong in compose profiles (`camera-test`, `jetbot-patrol`) and should emit human-readable logs.
+Target ≥90% coverage on `src/` via `pytest --cov=src --cov-report=term-missing`. Name tests after observable behavior (`test_spectrum_filter_handles_empty_input`). Place fixtures under `tests/fixtures/` and rely on factory helpers for paths. Hardware checks belong in compose profiles (`camera-test`, `jetbot-patrol`) and should emit human-readable logs. CSI camera checks rely on GStreamer Argus.
 
 ## Commit & Pull Request Guidelines
 Follow Conventional Commits (`type(scope): summary`) so CI and changelog tooling stay consistent. Each PR should link an issue, mention datasets touched, list new compose commands or config switches, and attach rendered manuscript diffs (`make manuscript && git diff manuscript/output`). Request review, ensure CI green, and avoid merging without at least one hardware validation note when code touches the robot.

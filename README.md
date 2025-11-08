@@ -26,29 +26,22 @@ This project targets NVIDIA Jetson Nano-powered JetBot platforms that need to na
 4. Verify JetBot drivers with `python scripts/check_hardware.py` (to be implemented).
 
 ## Docker Compose Usage
-- Build and launch Jupyter Lab for development (camera mapped via docker-compose.yml):
+- Build and launch Jupyter Lab for development (CSI camera via Argus):
   ```bash
   docker compose up --build dev
   ```
   Then open `http://<jetson-ip>:8888`.
-  
-  The dev service now maps a camera device by default using `devices:` in `docker-compose.yml`.
-  To use a different node, set `VIDEO_DEVICE` before launching (e.g., `export VIDEO_DEVICE=/dev/video1`).
 - Capture a camera snapshot (requires `/dev/video0`):
   ```bash
   docker compose --profile hardware run --rm camera-test
   ```
   Snapshot saved to `notebooks/camera_snapshot.jpg`.
 
-- Live camera stream (view in browser at `http://<jetson-ip>:8080`):
-  - From an interactive terminal inside the running dev container:
-    ```bash
-    python3 scripts/camera_stream.py --device ${VIDEO_DEVICE:-/dev/video0} --width 1280 --height 720 --fps 30 --port 8080
-    ```
-  - CSI (Raspberry Pi-style) camera via GStreamer:
-    ```bash
-    python3 scripts/camera_stream.py --gst --width 1280 --height 720 --fps 30 --port 8080
-    ```
+- Live camera stream (CSI via GStreamer; view at `http://<jetson-ip>:8080`):
+  ```bash
+  # Run inside the dev container terminal
+  python3 scripts/camera_stream.py --width 1280 --height 720 --fps 30 --port 8080
+  ```
 - Patrol test to drive the JetBot in a simple loop:
   ```bash
   docker compose --profile hardware run --rm jetbot-patrol
@@ -56,7 +49,7 @@ This project targets NVIDIA Jetson Nano-powered JetBot platforms that need to na
   Override speed and duration with env vars (`LINE_SPEED`, `TURN_SPEED`, `STEP_SECONDS`, `TURN_SECONDS`, `PATROL_LAPS`).
 
 ## Helpful Scripts & Notebook
-- Detect camera type and get a recommended command:
+- Detect CSI support and get a recommended command:
   ```bash
   python3 scripts/detect_camera.py
   ```
