@@ -51,8 +51,8 @@ services:
       - ./:/workspace:rw
       - /tmp/.X11-unix:/tmp/.X11-unix:ro
       - /tmp/argus_socket:/tmp/argus_socket
-      - /usr/lib/aarch64-linux-gnu/gstreamer-1.0:/usr/lib/aarch64-linux-gnu/gstreamer-1.0:ro
-      - /usr/lib/aarch64-linux-gnu/tegra:/usr/lib/aarch64-linux-gnu/tegra:ro
+      - /usr/lib/aarch64-linux-gnu/gstreamer-1.0:/usr/lib/aarch64-linux-gnu/gstreamer-1.0
+      - /usr/lib/aarch64-linux-gnu/tegra:/usr/lib/aarch64-linux-gnu/tegra
     devices:
       - "/dev/video${CSI_SENSOR_ID:-0}:/dev/video${CSI_SENSOR_ID:-0}"
     deploy:
@@ -104,8 +104,8 @@ services:
     volumes:
       - ./:/workspace:rw
       - /tmp/argus_socket:/tmp/argus_socket
-      - /usr/lib/aarch64-linux-gnu/gstreamer-1.0:/usr/lib/aarch64-linux-gnu/gstreamer-1.0:ro
-      - /usr/lib/aarch64-linux-gnu/tegra:/usr/lib/aarch64-linux-gnu/tegra:ro
+      - /usr/lib/aarch64-linux-gnu/gstreamer-1.0:/usr/lib/aarch64-linux-gnu/gstreamer-1.0
+      - /usr/lib/aarch64-linux-gnu/tegra:/usr/lib/aarch64-linux-gnu/tegra
     devices:
       - "/dev/video${CSI_SENSOR_ID:-0}:/dev/video${CSI_SENSOR_ID:-0}"
     command: ["python3", "scripts/camera_stream.py"]
